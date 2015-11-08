@@ -1,8 +1,13 @@
 import pygame
 from pygame import Rect
 from node import Node
+import random
 from random import randint
 import terrain
+
+NUM_LAKES = 25
+MAX_LAKE_SIZE = 11
+GRASSLAND_SPREAD = 6
 
 class World():
     def __init__(self, cols, rows, node_width, node_height):
@@ -14,12 +19,12 @@ class World():
                 self.nodes[(x,y)] = stage1Node(x, y, Rect(x * node_width, y * node_height, node_width, node_height))
 
         generateNeighbors(self.nodes, cols, rows)
+        generateLakes(self.nodes)
         generateTerrain(self.nodes)
 
     def draw(self, surface):
-        for pos, n in self.nodes.items():
+        for n in self.nodes.values():
             n.drawSelf(surface)
-
     def underCursor(self, pos):
         thing = None
         try:
@@ -27,13 +32,30 @@ class World():
         except KeyError:
             pass
         return thing
-                     
-def stage1Node(x, y, rectangle):
-    if randint(1, 25) == 1:
-        return Node(rectangle, terrain.Water())
-    else:
-        return Node(rectangle, terrain.Desert())
+        
+def stage1Node(col, row, nodeRectangle):
+    return Node(nodeRectangle, terrain.Desert())
 
+def spreadGrassland(nodes):
+    for n in nodes.values():
+        if n.previousTerrain.isGrassland:
+            for n2 in n.neighbors:
+                if not n2.terrain.isWater:
+                    n2.terrain = terrain.Grassland()
+    for n in nodes.values():
+        n.previousTerrain = n.terrain
+
+def generateLakes(nodes):
+    for i in xrange(NUM_LAKES):
+        generateLake(random.choice(nodes.values()), randint(1, MAX_LAKE_SIZE))    
+        
+def generateLake(source, size):
+    if size <= 0: return
+    source.terrain = terrain.Water()
+    landNeighbors = [n for n in source.neighbors if not n.terrain.isWater]
+    if landNeighbors:
+        generateLake(random.choice(landNeighbors), size - 1)
+    
 def generateTerrain(nodes):
     for n in nodes.values():
         n.previousTerrain = n.terrain
@@ -42,6 +64,8 @@ def generateTerrain(nodes):
         if n.previousTerrain.isWater:
             for n2 in n.neighbors:
                 n2.terrain = terrain.Water()
+    for n in nodes.values():
+        n.previousTerrain = n.terrain
     #Step 2, add grassland
     for n in nodes.values():
         if n.terrain.isWater:
@@ -50,19 +74,26 @@ def generateTerrain(nodes):
                     n2.terrain = terrain.Grassland()
                     n2.previousTerrain = n2.terrain
     #Step 3, spread grassland farther
-    for n in nodes.values():
-        if n.previousTerrain.isGrassland:
-            for n2 in n.neighbors:
-                if not n2.terrain.isWater:
-                    n2.terrain = terrain.Grassland()
+    for x in xrange(GRASSLAND_SPREAD):
+        spreadGrassland(nodes)
 
 def generateNeighbors(nodes, cols, rows):
     #Set up neighbors
-    for x in xrange(cols - 1):
-        for y in xrange(rows - 1):
-            for other_coord in [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]:
+    for x in xrange(cols):
+        for y in xrange(rows):
                 try:
-                    nodes[(x,y)].addNeighbor(nodes[other_coord[0],other_coord[1]])
+                    nodes[(x,y)].addNeighbor(nodes[(x+1,y)])
                 except KeyError:
-                    #There are boundaries.
                     pass
+                try:
+                    nodes[(x,y)].addNeighbor(nodes[(x-1,y)])
+                except KeyError:
+                    pass
+                try:
+                    nodes[(x,y)].addNeighbor(nodes[(x,y+1)])
+                except KeyError:
+                    pass
+                try:
+                    nodes[(x,y)].addNeighbor(nodes[(x,y-1)])
+                except KeyError:
+                    pass                

@@ -1,6 +1,7 @@
 import pygame
 from modules import *
 from modules.world import World
+import sys
 
 WIDTH = 1000
 HEIGHT = 600
@@ -38,6 +39,7 @@ def main():
             if e.type == pygame.QUIT:
                 running = False
                 pygame.quit()
+                sys.exit(0)
             elif e.type == pygame.MOUSEBUTTONUP:
                 textPart.selected_thing = world.underCursor(pygame.mouse.get_pos())
 
