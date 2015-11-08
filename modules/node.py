@@ -8,7 +8,7 @@ class Node():
         self.rect = rectangle
         self.terrain = terrain
     def __str__(self):
-        return "Empty node at " + str(self.rect)
+        return str(self.terrain) + " at " + str(self.rect)
     
     def addNeighbor(self, toAdd):
         self.neighbors.append(toAdd)
