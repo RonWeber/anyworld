@@ -16,7 +16,14 @@ class TextPart:
     def update_text(self):
         self.surface.fill(BACK_COLOR)
         if self.selected_thing is None:
-            words = self.font.render("Nothing selected", 1, TEXT_COLOR)
+            words = "Nothing selected"
         else:
-            words = self.font.render(str(self.selected_thing), 1, TEXT_COLOR)
-        self.surface.blit(words, (0,0))        
+            words = str(self.selected_thing)
+
+        lines = words.split('\n')
+        height = 0
+        for l in lines:
+            textSurface = self.font.render(l, 1, TEXT_COLOR)
+            self.surface.blit(textSurface, (0, height))
+            height += textSurface.get_height()
+
